@@ -5,7 +5,11 @@ const {
     createProduct,
     updateProduct,
     deleteProduct,
+    getProductsByCategoryId,
+    getProductsBySubcategoryId,
 } = require('../services/productServices')
+
+const { ObjectId } = require('mongodb');
 
 const router = express.Router()
 
@@ -18,6 +22,26 @@ router.get('/products', async (req, res) => {
     }
 })
 
+router.get('/categories/:id/products', async (req, res) => {
+    const { id } = req.params;
+    try {
+      const products = await getProductsByCategoryId(id);
+      res.status(200).json(products);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/subcategories/:id/products', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const products = await getProductsBySubcategoryId(id);
+        res.status(200).json(products);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 router.get('/products/:id', async (req, res) => {
     const { id } = req.params
     try {
@@ -29,7 +53,12 @@ router.get('/products/:id', async (req, res) => {
 })
 
 router.post('/products', async (req, res) => {
-    const newProductData = req.body
+
+  const newProductData = {
+    ...req.body,
+    subcategoryId: ObjectId.createFromHexString(req.body.subcategoryId) // Convert to ObjectId
+  };
+
     try {
         const product = await createProduct(newProductData)
         res.status(201).json(product)
@@ -60,5 +89,16 @@ router.delete('/products/:id', async (req, res) => {
         res.status(500).json({ error: error.message })
     }
 })
+
+router.get('/subcategories/:id/products', async (req, res) => {
+    const { id } = req.params;
+    try {
+      const db = getDB();
+      const products = await db.collection('products').find({ subcategoryId: id }).toArray();
+      res.status(200).json(products);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
 module.exports = router
