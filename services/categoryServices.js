@@ -1,5 +1,7 @@
 const { getDB } = require('../db')
 const { ObjectId } = require('mongodb')
+const slugify = require('slugify');
+
 async function getAllCategories() {
     try {
         const db = getDB();
@@ -7,39 +9,39 @@ async function getAllCategories() {
         const categories = await collection.find().toArray()
         return categories
     } catch (error) {
-        console.error("Error fetching all categories:", error);
+        console.error("Error fetching all categories:", error)
         throw new Error("Failed to fetch categories")
     }
 }
 
-async function getCategoryWithProducts(id) {
+async function getCategoryWithSubcategories(id) {
     try {
-        const db = getDB();
+        const db = getDB()
 
-        const categoryWithProducts = await db.collection('categories').aggregate([
+        const categoryWithSubcategories = await db.collection('categories').aggregate([
             { $match: { _id: ObjectId.createFromHexString(id) } }, 
             {
                 $lookup: {
-                    from: 'products',       
-                    localField: '_id',    
-                    foreignField: 'categoryId',
-                    as: 'products'     
+                    from: 'subcategories',
+                    localField: '_id', 
+                    foreignField: 'categoryId', 
+                    as: 'subcategories'    
                 }
             },
             {
                 $project: {
                     name: 1,              
                     description: 1,          
-                    products: 1              
+                    subcategories: 1              
                 }
             }
         ]).toArray();
 
-        if (categoryWithProducts.length === 0) {
+        if (categoryWithSubcategories.length === 0) {
             throw new Error("Category not found");
         }
 
-        return categoryWithProducts
+        return categoryWithSubcategories
     } catch (error) {
         console.error(`Error fetching category with products by ID "${id}":`, error);
         throw new Error("Failed to fetch category with products");
@@ -49,6 +51,7 @@ async function getCategoryWithProducts(id) {
 async function createCategory(newCategoryData) {
     try {
         const db = getDB();
+        
         const collection = db.collection('categories')
         const response = await collection.insertOne(newCategoryData)
 
@@ -104,7 +107,7 @@ async function deleteCategory(id) {
 
 module.exports = {
     getAllCategories,
-    getCategoryWithProducts,
+    getCategoryWithSubcategories,
     createCategory,
     updateCategory,
     deleteCategory,
